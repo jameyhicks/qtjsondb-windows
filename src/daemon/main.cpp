@@ -45,7 +45,9 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
+#ifndef Q_CC_MINGW
 #include <sys/resource.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,6 +67,7 @@ QT_USE_NAMESPACE_JSONDB_PARTITION
 
 /***************************************************************************/
 
+#ifndef Q_CC_MINGW
 void daemonize()
 {
     int i = fork();
@@ -90,17 +93,23 @@ void daemonize()
     int lfp = ::open(qPrintable(pidfile), O_RDWR|O_CREAT, 0640);
     if (lfp<0)
         qFatal("Cannot open pidfile %s\n", qPrintable(pidfile));
+#ifndef Q_CC_MINGW
     if (lockf(lfp, F_TLOCK, 0)<0)
         qFatal("Can't get a lock on %s - another instance may be running\n", qPrintable(pidfile));
+#endif
+
     QByteArray ba = QByteArray::number(::getpid());
     ::write(lfp, ba.constData(), ba.size());
     ::close(lfp);
 
+#ifndef Q_CC_MINGW
     ::signal(SIGCHLD,SIG_IGN);
     ::signal(SIGTSTP,SIG_IGN);
     ::signal(SIGTTOU,SIG_IGN);
     ::signal(SIGTTIN,SIG_IGN);
+#endif
 }
+#endif
 
 /***************************************************************************/
 
@@ -166,7 +175,11 @@ int main(int argc, char * argv[])
     QString searchPath;
     quint16 port = 0;
     bool clear = false;
+#ifndef Q_CC_MINGW
     rlim_t limit = 0;
+#else
+    int limit = 0;
+#endif
     QString logFileName;
     QCoreApplication app(argc, argv);
     QStringList args = QCoreApplication::arguments();
@@ -281,13 +294,16 @@ int main(int argc, char * argv[])
     DBServer server(searchPath);
     if (port)
         server.setTcpServerPort(port);
+#ifndef Q_CC_MINGW
     JsonDbSignals handler;
     QObject::connect(&handler, SIGNAL(sigTERM()), &server, SLOT(sigTERM()));
     QObject::connect(&handler, SIGNAL(sigHUP()), &server, SLOT(sigHUP()));
     QObject::connect(&handler, SIGNAL(sigINT()), &server, SLOT(sigINT()));
     QObject::connect(&handler, SIGNAL(sigUSR1()), &server, SLOT(sigUSR1()));
     handler.start();
+#endif
 
+#ifndef Q_CC_MINGW
     if (limit) {
         struct rlimit rlim;
         getrlimit(RLIMIT_AS, &rlim);
@@ -298,6 +314,7 @@ int main(int argc, char * argv[])
         if (rc)
             qWarning() << "Failed to setrlimit" << errno;
     }
+#endif
 
     server.setCompactOnClose(compactOnClose);
     if (clear)
@@ -311,8 +328,10 @@ int main(int argc, char * argv[])
 
     std::cout << "Ready" << std::endl << std::flush;
 
+#ifndef Q_CC_MINGW
     if (detach)
         daemonize();
+#endif
 #ifdef USE_SYSTEMD
     else
         sd_notify(0, "READY=1");

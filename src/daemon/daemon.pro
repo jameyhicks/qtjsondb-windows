@@ -17,7 +17,6 @@ INCLUDEPATH += $$PWD/../common
 HEADERS += \
     $$PWD/dbserver.h \
     $$PWD/jsondbephemeralpartition.h \
-    $$PWD/jsondbsignals.h \
     $$PWD/../common/jsondbsocketname_p.h \
     $$PWD/clientjsonstream.h
 
@@ -25,8 +24,12 @@ SOURCES += \
     $$PWD/main.cpp \
     $$PWD/dbserver.cpp \
     $$PWD/jsondbephemeralpartition.cpp \
-    $$PWD/jsondbsignals.cpp \
     $$PWD/clientjsonstream.cpp
+
+!win32: {
+    HEADERS += $$PWD/jsondbsignals.h
+    SOURCES += $$PWD/jsondbsignals.cpp
+}
 
 systemd {
     DEFINES += USE_SYSTEMD
