@@ -39,11 +39,13 @@
 **
 ****************************************************************************/
 
-#include "private/qjsondbstandardpaths_p.h"
+#include "qjsondbstandardpaths_p.h"
 
 #include <QtCore/qdir.h>
 
+#ifndef Q_CC_MINGW
 #include <pwd.h>
+#endif
 
 QT_BEGIN_NAMESPACE_JSONDB
 
@@ -51,6 +53,7 @@ static bool qtjsondb_autotestMode = false;
 
 QString QJsonDbStandardPaths::homePath(const QString &user)
 {
+#ifndef Q_CC_MINGW
     if (qtjsondb_autotestMode) {
         if (user == QLatin1String("userthatdoesnotexist"))
             return QString();
@@ -62,6 +65,9 @@ QString QJsonDbStandardPaths::homePath(const QString &user)
         return QString();
 
     return QString::fromUtf8(pwd->pw_dir);
+#else
+    return QDir::homePath() + QLatin1String("/.qttest/qtjsondb/");
+#endif
 }
 
 QString QJsonDbStandardPaths::currentUser()
