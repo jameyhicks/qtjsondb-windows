@@ -383,7 +383,9 @@ void TestPartition::reopen()
 
 void TestPartition::openTwice()
 {
-  QSKIP("flock unimplemented");
+#ifdef Q_OS_WIN32
+    QSKIP("flock unimplemented on windows");
+#endif
     JsonDbPartitionSpec spec = mJsonDbPartition->partitionSpec();
 
     JsonDbPartition partition;
