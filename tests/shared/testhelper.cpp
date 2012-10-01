@@ -147,7 +147,11 @@ qint64 TestHelper::launchJsonDbDaemon_helper(const QStringList &args, const char
                 this, SLOT(processFinished(int,QProcess::ExitStatus)));
     }
 
+#ifndef Q_OS_WIN32
     QString socketName = QString("testjsondb_%1").arg(getpid());
+#else
+    QString socketName = QString("testjsondb");
+#endif
 
     const QString effectiveWorkingDir = mWorkingDirectory.isEmpty() ? QDir::currentPath() : mWorkingDirectory;
 
@@ -158,7 +162,7 @@ qint64 TestHelper::launchJsonDbDaemon_helper(const QStringList &args, const char
         mProcess->setWorkingDirectory(effectiveWorkingDir);
     }
 
-    ::setenv("JSONDB_SOCKET", qPrintable(socketName), 1);
+    qputenv("JSONDB_SOCKET", qPrintable(socketName));
 
     QStringList argList = args;
     argList << QLatin1String("-reject-stale-updates");
