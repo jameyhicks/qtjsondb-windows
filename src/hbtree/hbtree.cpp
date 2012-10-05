@@ -96,7 +96,8 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 {
     off_t seekOffset = lseek(fd, offset, SEEK_SET);
     if (seekOffset != offset) {
-        fprintf(stderr, "pread lseek failed offset=%ld result=%ld\n", offset, seekOffset);
+	off_t size = lseek(fd, offset, SEEK_END);
+        fprintf(stderr, "pread lseek failed offset=%ld size=%ld result=%ld\n", offset, size, seekOffset);
         return -1;
     }
     size_t bytesRead = 0;
@@ -105,9 +106,13 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
     do {
         int rc = read(fd, readBuf, readCount);
         if (rc <= 0) {
-            fprintf(stderr, "pread offset=%ld readCount=%d bytesRead=%d count=%d rc=%d\n", offset, readCount, bytesRead, count, rc);
+	    off_t size = lseek(fd, 0, SEEK_END);
+	    if (offset+count <= size)
+		fprintf(stderr, "pread offset=%ld size=%ld readCount=%d bytesRead=%d count=%d rc=%d\n", offset, size, readCount, bytesRead, count, rc);
+	    Q_ASSERT(offset+count > size);
+	}
+	if (rc <= 0)
             return rc;
-        }
         bytesRead += rc;
         readBuf += rc;
         readCount -= rc;
@@ -117,6 +122,7 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
+    off_t filesize = lseek(fd, 0, SEEK_END);
     off_t seekOffset = lseek(fd, offset, SEEK_SET);
     if (seekOffset != offset) {
         fprintf(stderr, "pwrite lseek failed: seekOffset=%ld offset=%ld\n", seekOffset, offset);
@@ -126,15 +132,23 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
     char *writeBuf = (char *)buf;
     do {
         int rc = write(fd, writeBuf, writeCount);
+	if (rc != writeCount)
+            fprintf(stderr, "pwrite short write filesize=%ld offset=%ld writeCount=%d bytesWritten=%d count=%d rc=%d\n",
+                    filesize, offset, writeCount, bytesWritten, count, rc);
+
         if (rc <= 0) {
-            fprintf(stderr, "pwrite offset=%ld writeCount=%d bytesWritten=%d count=%d rc=%d\n",
-                    offset, writeCount, bytesWritten, count, rc);
+	    Q_ASSERT(rc > 0);
             return rc;
         }
         writeBuf += rc;
         writeCount -= rc;
         bytesWritten+=rc;
     } while (writeCount > 0);
+    off_t size = lseek(fd, 0, SEEK_END);
+    if (((offset+count) > filesize) && (size != (offset + count)))
+	fprintf(stderr, "pwrite wrong size sizebeforee=%ld offset=%ld count=%d sizeafter=%ld offset+count=%ld\n",
+		filesize, offset, count, size, offset+count);
+    Q_ASSERT((offset+count <= filesize) || (size == (offset + count)));
     return bytesWritten;
 }
 

@@ -64,7 +64,7 @@ class HBtreePrivate
     Q_DECLARE_PUBLIC(HBtree)
 public:
 
-    // All pages have this structure at the beggining.
+    // All pages have this structure at the beginning.
     struct PageInfo {
         enum Type {
             Marker = 1,
@@ -212,7 +212,7 @@ public:
         {}
         struct Meta {
             Meta()
-                : root(PageInfo::INVALID_PAGE), revision(0), syncId(0), tag(0), size(0), flags(0)
+	    : root(PageInfo::INVALID_PAGE), revision(0), tag(0), syncId(0), size(0), flags(0)
             {}
             quint32 root;
             quint32 revision;
@@ -224,6 +224,7 @@ public:
         Q_STATIC_ASSERT(sizeof(HBtreePrivate::Meta) == 28);
 
         Meta meta;
+
         QSet<quint32> residueHistory; // history nodes that don't have a home. usable after sync.
         quint32 overflowPage;
     };
