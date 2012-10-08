@@ -60,8 +60,8 @@
 #include <QUuid>
 #include <QVariant>
 #include <QPointer>
-#include <QJsonDbWatcher>
-#include <QJsonDbReadRequest>
+#include <qjsondbwatcher.h>
+#include <qjsondbreadrequest.h>
 
 QT_BEGIN_NAMESPACE_JSONDB
 

@@ -208,11 +208,12 @@ QJsonDbConnectionPrivate::QJsonDbConnectionPrivate(QJsonDbConnection *q)
     timeoutTimer.setSingleShot(true);
     timeoutTimer.setTimerType(Qt::VeryCoarseTimer);
     QObject::connect(&timeoutTimer, SIGNAL(timeout()), q, SLOT(_q_onTimer()));
-    socket = new QLocalSocket(q);
+    //socket = new QLocalSocket(q);
+    socket = new QTcpSocket(q);
     QObject::connect(socket, SIGNAL(disconnected()), q_ptr, SLOT(_q_onDisconnected()));
     QObject::connect(socket, SIGNAL(connected()), q_ptr, SLOT(_q_onConnected()));
-    QObject::connect(socket, SIGNAL(error(QLocalSocket::LocalSocketError)),
-                     q_ptr, SLOT(_q_onError(QLocalSocket::LocalSocketError)));
+    QObject::connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
+                     q_ptr, SLOT(_q_onError(QAbstractSocket::SocketError)));
     stream = new QtJsonDbJsonStream::JsonStream(q);
     stream->setDevice(socket, true);
     QObject::connect(stream, SIGNAL(receive(QJsonObject)),
@@ -291,6 +292,15 @@ void QJsonDbConnectionPrivate::_q_onDisconnected()
     emit q->disconnected();
 }
 
+void QJsonDbConnectionPrivate::_q_onError(QAbstractSocket::SocketError error)
+{
+    switch (error) {
+    default:
+        _q_onDisconnected();
+        break;
+    }
+}
+
 void QJsonDbConnectionPrivate::_q_onError(QLocalSocket::LocalSocketError error)
 {
     switch (error) {
@@ -315,7 +325,8 @@ void QJsonDbConnectionPrivate::_q_onError(QLocalSocket::LocalSocketError error)
 void QJsonDbConnectionPrivate::_q_onTimer()
 {
     if (status == QJsonDbConnection::Connecting)
-        socket->connectToServer(serverSocketName());
+	//socket->connectToServer(serverSocketName());
+	socket->connectToHost(QStringLiteral("localhost"), 2222);
 }
 
 void QJsonDbConnectionPrivate::handleRequestQueue()
@@ -640,13 +651,14 @@ void QJsonDbConnection::connectToServer()
     Q_D(QJsonDbConnection);
     if (d->status != QJsonDbConnection::Unconnected)
         return;
-    Q_ASSERT(d->socket->state() == QLocalSocket::UnconnectedState);
+    Q_ASSERT(d->socket->state() == QAbstractSocket::UnconnectedState);
 
     d->explicitDisconnect = false;
     d->status = QJsonDbConnection::Connecting;
     emit statusChanged(d->status);
 
-    d->socket->connectToServer(d->serverSocketName());
+    //d->socket->connectToServer(d->serverSocketName());
+    d->socket->connectToHost(QStringLiteral("localhost"), 2222);
 }
 
 /*!
@@ -660,7 +672,8 @@ void QJsonDbConnection::disconnectFromServer()
     if (d->status == QJsonDbConnection::Unconnected)
         return;
     d->explicitDisconnect = true;
-    d->socket->disconnectFromServer();
+    //d->socket->disconnectFromServer();
+    d->socket->disconnectFromHost();
 
     if (d->privatePartitionHandler) {
         QObject::disconnect(d->privatePartitionHandler, 0, this, 0);

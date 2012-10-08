@@ -56,6 +56,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QLocalSocket>
+#include <QTcpSocket>
 #include <QThread>
 #include <QTimer>
 
@@ -86,6 +87,7 @@ public:
 
     void _q_onConnected();
     void _q_onDisconnected();
+    void _q_onError(QAbstractSocket::SocketError);
     void _q_onError(QLocalSocket::LocalSocketError);
     void _q_onTimer();
     void _q_onReceivedObject(const QJsonObject &);
@@ -112,7 +114,8 @@ public:
     bool explicitDisconnect;
     QTimer timeoutTimer;
 
-    QLocalSocket *socket;
+    //QLocalSocket *socket;
+    QTcpSocket *socket;
     QtJsonDbJsonStream::JsonStream *stream;
 
     QPointer<QJsonDbRequest> currentRequest;

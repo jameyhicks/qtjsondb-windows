@@ -4,6 +4,7 @@ VERSION = 1.0.0
 
 QT = core
 QT_FOR_PRIVATE = network qml jsondbpartition
+CONFIG += internal_module
 
 load(qt_module)
 
