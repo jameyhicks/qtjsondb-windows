@@ -40,6 +40,9 @@
 ****************************************************************************/
 
 #include "jsonstream.h"
+#ifdef Q_OS_WIN32
+#include <process.h>
+#endif
 
 #include <QDebug>
 #include <QDataStream>
@@ -98,7 +101,10 @@ bool JsonStream::send(const QJsonObject &object)
             qWarning() << "Error writing to socket" << mDevice->errorString();
         } else if (didWrite < shouldWrite) {
             mWriteBuffer = data.mid(didWrite);
-        }
+        } else {
+	  //qWarning() << _getpid() << "Wrote object" << didWrite << shouldWrite;
+	  //qWarning() << _getpid() << data.toHex();
+	}
     } else {
         qWarning() << "Buffering, slow down your writes";
         mWriteBuffer.append(data);
@@ -130,12 +136,18 @@ void JsonStream::deviceReadyRead()
             qWarning() << "Error reading from socket" << mDevice->errorString();
             continue;
         }
+	if (bytesRead < bytesAvailable) {
+	    qWarning() << __FILE__ << __LINE__ << "Short read" << bytesRead << bytesAvailable;
+	} else {
+	  //qWarning() << _getpid() << __FILE__ << __LINE__ << "Read" << bytesRead << "bytes at offset" << offset << "mReadBuffer.size()" << mReadBuffer.size();
+	}
         while (mReadBuffer.size() > static_cast<int>(sizeof(JsonHeader))) {
             JsonHeader header;
             memcpy(&header, mReadBuffer.constData(), sizeof(header));
             if (header.h.tag != QJsonDocument::BinaryFormatTag || header.h.version != qToLittleEndian(1u)) {
+                qWarning() << _getpid() << "Got invalid binary json data";
+		qWarning() << _getpid() << mReadBuffer.toHex();
                 mReadBuffer.clear();
-                qWarning() << "Got invalid binary json data";
                 break;
             }
             QJsonDocument doc(QJsonDocument::fromBinaryData(mReadBuffer, QJsonDocument::Validate));
