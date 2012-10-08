@@ -603,7 +603,19 @@ int myRand(int r)
 
 
 int asciiCmpFunc(const QByteArray &a, const QByteArray &b) {
-//    qDebug() << a << b;
+    //qDebug() << "asciiCmpFunc" << a.toHex() << b.toHex();
+    return strcmp(a.constData(), b.constData());
+
+    size_t len = qMin(a.size(), b.size());
+    int cmp = memcmp(a.constData(), b.constData(), len);
+    if (cmp != 0)
+	return cmp;
+    if (a.size() > len)
+	return 1;
+    if (b.size() < len)
+	return -1;
+    return 0;
+
     int na = a.toInt();
     int nb = b.toInt();
     return na < nb ? -1 : (na > nb ? 1 : 0);
@@ -2069,7 +2081,6 @@ void TestHBtree::compareSequenceOfVarLengthKeys()
 
 void TestHBtree::asciiAsSortedNumbers()
 {
-  QSKIP("fails on windows");
     const int numItems = 1000;
     QVector<QByteArray> keys;
 

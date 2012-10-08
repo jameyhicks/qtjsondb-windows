@@ -86,11 +86,8 @@ void TestJsonStream::testJsonStream()
     stream->setDevice(device);
     connect(stream, SIGNAL(receive(QJsonObject)), this, SLOT(receiveStream(QJsonObject)));
 
-    qApp->processEvents();
-    qApp->processEvents();
-    qApp->processEvents();
-    qApp->processEvents();
-    qApp->processEvents();
+    for (int i = 0; i < 10; i++)
+	qApp->processEvents();
     QVERIFY(serverOk);
     QCOMPARE(receiverOk, 3);
 }
@@ -124,6 +121,7 @@ void TestJsonStream::receiveStream(const QJsonObject &json)
         break;
     case 2:
         QCOMPARE(json.value("hello").toString(), QString("again"));
+        QCOMPARE(json.value("a").toDouble(), 1.0);
         break;
     case 3:
         QCOMPARE(json.value("hello").toString(), QString("document"));

@@ -120,9 +120,11 @@ private slots:
 
 private:
     bool wasRoot;
+#ifndef Q_OS_WIN32
     uid_t uidUsed;
     uid_t uid2Used;
     QList<gid_t> gidsAdded;
+#endif
     bool failed;
     qint64 pid;
 
@@ -157,6 +159,7 @@ TestJsonDbClient::~TestJsonDbClient()
 #  define NSS_PREFIX
 #endif
 
+#ifndef Q_OS_WIN32
 gid_t nextFreeGid (gid_t start)
 {
     struct group *old_grp;
@@ -167,13 +170,16 @@ gid_t nextFreeGid (gid_t start)
     }
     return start;
 }
+#endif
 
 void TestJsonDbClient::initTestCase()
 {
     removeDbFiles();
+#ifndef Q_OS_WIN32
     // Test if we are running as root
     if (!geteuid())
         wasRoot = true;
+#endif
 
     QStringList arg_list = (QStringList()
                             << "-validate-schemas");
@@ -181,7 +187,7 @@ void TestJsonDbClient::initTestCase()
         arg_list << "-enforce-access-control";
     pid = launchJsonDbDaemonDetached(arg_list, __FILE__);
 
-#if !defined(Q_OS_MAC)
+#if !defined(Q_OS_MAC) && !defined(Q_OS_WIN32)
     if (wasRoot) {
         connectToServer();
 
@@ -397,12 +403,14 @@ void TestJsonDbClient::initTestCase()
 void TestJsonDbClient::cleanupTestCase()
 {
     if (pid) {
-#if !defined(Q_OS_MAC)
+#if !defined(Q_OS_MAC) && !defined(Q_OS_WIN32)
         if (wasRoot)
             ::seteuid(0);
 #endif
+#ifndef Q_OS_WIN32
         ::kill(pid, SIGTERM);
-#if !defined(Q_OS_MAC)
+#endif
+#if !defined(Q_OS_MAC) && !defined(Q_OS_WIN32)
         if (wasRoot) {
             // Clean passwd
             FILE *newpasswd = ::fopen("newpasswd", "w");
@@ -715,7 +723,7 @@ void TestJsonDbClient::find()
         nameList << names[count - i - 1];
     }
     QCOMPARE(answerNames, nameList);
-#if !defined(Q_OS_MAC)
+#if !defined(Q_OS_MAC) && !defined(Q_OS_WIN32)
     if (wasRoot) {
         // Set user id that has no supplementary groups
         disconnectFromServer();

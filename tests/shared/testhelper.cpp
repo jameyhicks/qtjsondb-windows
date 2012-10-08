@@ -136,9 +136,11 @@ qint64 TestHelper::launchJsonDbDaemon_helper(const QStringList &args, const char
         }
     }
 
-    QString jsondb_app = QDir(QString::fromLocal8Bit(JSONDB_DAEMON_BASE)).absoluteFilePath(QLatin1String("jsondb"));
+    QString jsondb_app = QDir(QString::fromLocal8Bit(JSONDB_DAEMON_BASE)).absoluteFilePath(QLatin1String("jsondb.exe"));
+    qDebug() << "jsondb_app" << jsondb_app;
     if (!QFile::exists(jsondb_app))
-        jsondb_app = QLatin1String("jsondb"); // rely on the PATH
+        jsondb_app = QLatin1String("jsondb.exe"); // rely on the PATH
+    qDebug() << "jsondb_app" << jsondb_app;
 
     if (!detached) {
         mProcess = new QProcess;
