@@ -67,7 +67,7 @@ QT_USE_NAMESPACE_JSONDB_PARTITION
 
 /***************************************************************************/
 
-#ifndef Q_CC_MINGW
+#ifndef Q_OS_WIN32
 void daemonize()
 {
     int i = fork();
@@ -93,10 +93,8 @@ void daemonize()
     int lfp = ::open(qPrintable(pidfile), O_RDWR|O_CREAT, 0640);
     if (lfp<0)
         qFatal("Cannot open pidfile %s\n", qPrintable(pidfile));
-#ifndef Q_CC_MINGW
     if (lockf(lfp, F_TLOCK, 0)<0)
         qFatal("Can't get a lock on %s - another instance may be running\n", qPrintable(pidfile));
-#endif
 
     QByteArray ba = QByteArray::number(::getpid());
     ::write(lfp, ba.constData(), ba.size());
@@ -167,15 +165,17 @@ void logMessageOutput(QtMsgType type, const char *msg)
 
 int main(int argc, char * argv[])
 {
+    fprintf(stdout, "jsondb starting\n");
+    fflush(stdout);
     QCoreApplication::setOrganizationName("Nokia");
     QCoreApplication::setOrganizationDomain("nrcc.noklab.com");
     QCoreApplication::setApplicationName("jsondb");
     QCoreApplication::setApplicationVersion("1.0");
     QString pidFileName;
     QString searchPath;
-    quint16 port = 0;
+    quint16 port = 2222;
     bool clear = false;
-#ifndef Q_CC_MINGW
+#ifndef Q_OS_WIN32
     rlim_t limit = 0;
 #else
     int limit = 0;
@@ -190,6 +190,7 @@ int main(int argc, char * argv[])
     progname = args.takeFirst();
     while (args.size()) {
         QString arg = args.at(0);
+	std::cout << "arg" << arg.toLatin1().data();
         if (!arg.startsWith("-"))
             break;
         args.removeFirst();
@@ -219,11 +220,14 @@ int main(int argc, char * argv[])
         } else if (arg == "-debug") {
             jsondbSettings->setDebug(true);
         } else if (arg == "-verbose") {
+	    qDebug() << "verbose";
             jsondbSettings->setVerbose(true);
         } else if (arg == "-verbose-errors") {
             jsondbSettings->setVerboseErrors(true);
         } else if (arg == "-performance-log") {
             jsondbSettings->setPerformanceLog(true);
+#else
+#error no debug
 #endif
 #ifdef Q_OS_LINUX
         } else if ( arg == "-daemon" ) {
@@ -328,7 +332,7 @@ int main(int argc, char * argv[])
 
     std::cout << "Ready" << std::endl << std::flush;
 
-#ifndef Q_CC_MINGW
+#ifndef Q_OS_WIN32
     if (detach)
         daemonize();
 #endif
