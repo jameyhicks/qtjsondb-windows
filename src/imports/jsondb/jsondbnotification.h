@@ -69,7 +69,7 @@ public:
 
     Q_PROPERTY(QString query READ query WRITE setQuery)
     Q_PROPERTY(QVariant actions READ actions WRITE setActions)
-    Q_PROPERTY(QT_PREPEND_NAMESPACE_JSONDB(JsonDbPartition)* partition READ partition WRITE setPartition)
+    Q_PROPERTY(QtJsonDb::JsonDbPartition* partition READ partition WRITE setPartition)
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(QVariantMap error READ error NOTIFY errorChanged)
