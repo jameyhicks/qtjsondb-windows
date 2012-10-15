@@ -45,6 +45,7 @@
 #include "qjsondbwriterequest.h"
 #include "private/qjsondbstandardpaths_p.h"
 #include "private/qjsondbflushrequest_p.h"
+#include "private/qjsondbreloadrequest_p.h"
 #include "testhelper.h"
 
 #include <QDebug>
@@ -195,9 +196,16 @@ void TestQJsonDbRequest::modifyPartitions()
     partitionsFile.write(QJsonDocument(defs).toJson());
     partitionsFile.close();
 
+#ifndef Q_OS_WIN32
+    // test SIGHUP behavior here, but use the reload command elsewhere to reduce clutter
     // send the daemon a SIGHUP to get it to reload the partitions
     kill(mProcess->pid(), SIGHUP);
     QVERIFY(waitForResponseAndNotifications(0, &watcher, 2));
+#else
+    QJsonDbReloadRequest reload;
+    mConnection->send(&reload);
+    QVERIFY(waitForResponseAndNotifications(&reload, &watcher, 2));
+#endif
 
     // query for the new partitions
     mConnection->send(&partitionQuery);
@@ -228,9 +236,10 @@ void TestQJsonDbRequest::modifyPartitions()
     // remove the new partitions file
     partitionsFile.remove();
 
-    // send the daemon a SIGHUP to get it to unload the partitions
-    kill(mProcess->pid(), SIGHUP);
-    QVERIFY(waitForResponseAndNotifications(0, &watcher, 2));
+    // send the daemon a reload request to get it to unload the partitions
+    QJsonDbReloadRequest reload;
+    mConnection->send(&reload);
+    QVERIFY(waitForResponseAndNotifications(&reload, &watcher, 2));
 
     // verify that we're back to just the origin partition
     mConnection->send(&partitionQuery);
@@ -349,9 +358,10 @@ void TestQJsonDbRequest::removablePartition()
     // unmount just in case previous run failed
     system(QString::fromLatin1("umount -l %1 > /dev/null 2>&1").arg(mnt.absolutePath()).toLatin1());
 
-    // load the partitions via a SIGHUP and wait for the notification
-    kill(mProcess->pid(), SIGHUP);
-    QVERIFY(waitForResponseAndNotifications(0, &watcher, 1));
+    // send the daemon a reload request to get it to unload the partitions
+    QJsonDbReloadRequest reload;
+    mConnection->send(&reload);
+    QVERIFY(waitForResponseAndNotifications(&reload, &watcher, 1));
     QList<QJsonDbNotification> notifications = watcher.takeNotifications();
     QCOMPARE(notifications.count(), 1);
 
@@ -393,8 +403,9 @@ void TestQJsonDbRequest::removablePartition()
     QVERIFY(mnt.mkpath(QStringLiteral(".")));
     QVERIFY(system(QString::fromLatin1("mount -o loop %1 %2 > /dev/null 2>&1").arg(tmpFile).arg(mnt.absolutePath()).toLatin1()) == 0);
 
-    kill(mProcess->pid(), SIGHUP);
-    QVERIFY(waitForResponseAndNotifications(0, &watcher, 1));
+    // send the daemon a reload request to get it to unload the partitions
+    mConnection->send(&reload);
+    QVERIFY(waitForResponseAndNotifications(&reload, &watcher, 1));
     notifications = watcher.takeNotifications();
     QCOMPARE(notifications.count(), 1);
 
@@ -418,8 +429,9 @@ void TestQJsonDbRequest::removablePartition()
     // remove the mount point
     QVERIFY(mnt.rmpath(QStringLiteral(".")));
 
-    kill(mProcess->pid(), SIGHUP);
-    QVERIFY(waitForResponseAndNotifications(0, &watcher, 1));
+    // send the daemon a reload request to get it to unload the partitions
+    mConnection->send(&reload);
+    QVERIFY(waitForResponseAndNotifications(&reload, &watcher, 1));
     notifications = watcher.takeNotifications();
     QCOMPARE(notifications.count(), 1);
 
@@ -438,8 +450,10 @@ void TestQJsonDbRequest::removablePartition()
 
     // remove the partition definition and reload
     partitionsFile.remove();
-    kill(mProcess->pid(), SIGHUP);
-    QVERIFY(waitForResponseAndNotifications(0, &watcher, 1));
+
+    // send the daemon a reload request to get it to unload the partitions
+    mConnection->send(&reload);
+    QVERIFY(waitForResponseAndNotifications(&reload, &watcher, 1));
 
     mConnection->removeWatcher(&watcher);
     waitForStatus(&watcher, QJsonDbWatcher::Inactive);
@@ -1500,9 +1514,10 @@ public:
         partitionsFile.write(QJsonDocument(defs).toJson());
         partitionsFile.close();
 
-        // make daemon reload partition defs
-        mTestHelper->sighupDaemon();
-        if (!mTestHelper->waitForResponseAndNotifications(0, &mWatcher, defs.size())) {
+        // send the daemon a reload request to get it to unload the partitions
+        QJsonDbReloadRequest reload;
+        mTestHelper->connection()->send(&reload);
+        if (!mTestHelper->waitForResponseAndNotifications(&reload, &mWatcher, defs.size())) {
             QWARN("reloading partition defs failed");
             return QList<QJsonObject>();
         }

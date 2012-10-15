@@ -217,12 +217,6 @@ void TestHelper::stopDaemon()
     }
 }
 
-void TestHelper::sighupDaemon()
-{
-    if (mProcess)
-        kill(mProcess->pid(), SIGHUP);
-}
-
 void TestHelper::connectToServer()
 {
     mConnection = new QJsonDbConnection(this);

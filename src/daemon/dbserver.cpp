@@ -698,6 +698,23 @@ void DBServer::processFlush(ClientJsonStream *stream, JsonDbOwner *owner, const 
     stream->send(result);
 }
 
+void DBServer::processReload(ClientJsonStream *stream, JsonDbOwner *owner, int id)
+{
+    Q_UNUSED(owner);
+
+    QJsonObject resultmap, errormap;
+
+    if (jsondbSettings->debug())
+        qDebug() << JSONDB_INFO << "Reload request received";
+    loadPartitions();
+
+    QJsonObject result;
+    result.insert(JsonDbString::kResultStr, resultmap);
+    result.insert(JsonDbString::kErrorStr, errormap);
+    result.insert(JsonDbString::kIdStr, id);
+    stream->send(result);
+}
+
 void DBServer::processLog(ClientJsonStream *stream, const QString &message, int id)
 {
      if (jsondbSettings->debug() || jsondbSettings->performanceLog())
@@ -1231,6 +1248,8 @@ void DBServer::receiveMessage(const QJsonObject &message)
         processChangesSince(stream, owner, object, partitionName, id);
     } else if (action == JsonDbString::kFlushStr) {
         processFlush(stream, owner, partitionName, id);
+    } else if (action == JsonDbString::kReloadStr) {
+        processReload(stream, owner, id);
     } else if (action == JsonDbString::kLogStr) {
         processLog(stream, object.toObject().value(JsonDbString::kMessageStr).toString(), id);
     }

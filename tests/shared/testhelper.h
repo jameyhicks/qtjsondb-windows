@@ -74,7 +74,6 @@ public:
     void launchJsonDbDaemon(const QStringList &args, const char *sourceFile, bool skipConnection = false);
     qint64 launchJsonDbDaemonDetached(const QStringList &args, const char *sourceFile, bool skipConnection = false);
     void stopDaemon();
-    void sighupDaemon();
 
     void connectToServer();
     void disconnectFromServer();
