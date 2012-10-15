@@ -217,13 +217,12 @@ public:
             quint32 root;
             quint32 revision;
             quint32 syncId;
-            quint64 tag;
             quint32 size; // size of file at time of commit
+            quint64 tag;
             quint32 flags; // If marker has this, it was synced.
         } HBTREE_ATTRIBUTE_PACKED;
-#ifndef Q_OS_WIN32
-        Q_STATIC_ASSERT(sizeof(Meta) == 28);
-#endif
+        Q_STATIC_ASSERT(sizeof(HBtreePrivate::Meta) == 28);
+
         Meta meta;
         QSet<quint32> residueHistory; // history nodes that don't have a home. usable after sync.
         quint32 overflowPage;
