@@ -97,6 +97,7 @@ public:
     static const QString kTokenStr;
     static const QString kFlushStr;
     static const QString kReloadStr;
+    static const QString kTerminateStr;
     static const QString kSettingsStr;
     static const QString kChangesSinceStr;
     static const QString kStateNumberStr;

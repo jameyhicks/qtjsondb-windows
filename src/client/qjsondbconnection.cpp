@@ -374,6 +374,8 @@ void QJsonDbConnectionPrivate::handlePrivatePartitionRequest(const QJsonObject &
                          q, SLOT(_q_privateWriteRequestStarted(int,quint32)));
         QObject::connect(privatePartitionHandler, SIGNAL(flushRequestStarted(int,quint32)),
                          q, SLOT(_q_privateFlushRequestStarted(int,quint32)));
+        QObject::connect(privatePartitionHandler, SIGNAL(terminateRequestStarted(int,quint32)),
+                         q, SLOT(_q_privateTerminateRequestStarted(int,quint32)));
         QObject::connect(privatePartitionHandler, SIGNAL(finished(int)),
                          q, SLOT(_q_privateRequestFinished(int)));
         QObject::connect(privatePartitionHandler, SIGNAL(error(int,QtJsonDb::QJsonDbRequest::ErrorCode,QString)),

@@ -708,11 +708,48 @@ void DBServer::processReload(ClientJsonStream *stream, JsonDbOwner *owner, int i
         qDebug() << JSONDB_INFO << "Reload request received";
     loadPartitions();
 
+    // not used
+    resultmap.insert(JsonDbString::kStateNumberStr, 0);
+
     QJsonObject result;
     result.insert(JsonDbString::kResultStr, resultmap);
     result.insert(JsonDbString::kErrorStr, errormap);
     result.insert(JsonDbString::kIdStr, id);
     stream->send(result);
+}
+
+void DBServer::processTerminate(ClientJsonStream *stream, JsonDbOwner *owner, const QString &partitionName, int id)
+{
+    Q_UNUSED(owner);
+    JsonDbPartition *partition = mPartitions.value(partitionName, mDefaultPartition);
+
+    QJsonObject resultmap, errormap;
+
+    bool ok;
+    int stateNumber = partition->flush(&ok);
+
+    if (ok) {
+        resultmap.insert(JsonDbString::kStateNumberStr, stateNumber);
+    } else {
+        errormap.insert(JsonDbString::kCodeStr, JsonDbError::FlushFailed);
+        errormap.insert(JsonDbString::kMessageStr, QStringLiteral("Unable to flush partition"));
+    }
+
+    if (ok) {
+        resultmap.insert(JsonDbString::kStateNumberStr, stateNumber);
+    } else {
+        errormap.insert(JsonDbString::kCodeStr, JsonDbError::FlushFailed);
+        errormap.insert(JsonDbString::kMessageStr, QStringLiteral("Unable to flush partition"));
+    }
+
+    QJsonObject result;
+    result.insert(JsonDbString::kResultStr, resultmap);
+    result.insert(JsonDbString::kErrorStr, errormap);
+    result.insert(JsonDbString::kIdStr, id);
+    stream->send(result);
+
+    // now close the database
+    close();
 }
 
 void DBServer::processLog(ClientJsonStream *stream, const QString &message, int id)
@@ -1250,6 +1287,8 @@ void DBServer::receiveMessage(const QJsonObject &message)
         processFlush(stream, owner, partitionName, id);
     } else if (action == JsonDbString::kReloadStr) {
         processReload(stream, owner, id);
+    } else if (action == JsonDbString::kTerminateStr) {
+        processTerminate(stream, owner, partitionName, id);
     } else if (action == JsonDbString::kLogStr) {
         processLog(stream, object.toObject().value(JsonDbString::kMessageStr).toString(), id);
     }

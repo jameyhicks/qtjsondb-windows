@@ -70,6 +70,7 @@ public:
     static inline const QString changesSince() { return QStringLiteral("changesSince"); }
     static inline const QString flush() { return QStringLiteral("flush"); }
     static inline const QString reload() { return QStringLiteral("reload"); }
+    static inline const QString terminate() { return QStringLiteral("terminate"); }
     static inline const QString log() { return QStringLiteral("log"); }
     static inline const QString object() { return QStringLiteral("object"); }
     static inline const QString partition() { return QStringLiteral("partition"); }

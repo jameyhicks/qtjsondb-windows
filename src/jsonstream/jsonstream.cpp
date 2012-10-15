@@ -45,6 +45,7 @@
 #include <QDataStream>
 #include <QLocalSocket>
 #include <QAbstractSocket>
+#include <QObject>
 #include <QtEndian>
 #include <QJsonDocument>
 
