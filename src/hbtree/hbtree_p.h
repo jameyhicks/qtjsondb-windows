@@ -212,7 +212,7 @@ public:
         {}
         struct Meta {
             Meta()
-	    : root(PageInfo::INVALID_PAGE), revision(0), tag(0), syncId(0), size(0), flags(0)
+            : root(PageInfo::INVALID_PAGE), revision(0), syncId(0), size(0), tag(0), flags(0)
             {}
             quint32 root;
             quint32 revision;
@@ -221,7 +221,9 @@ public:
             quint64 tag;
             quint32 flags; // If marker has this, it was synced.
         } HBTREE_ATTRIBUTE_PACKED;
-        Q_STATIC_ASSERT(sizeof(HBtreePrivate::Meta) == 28);
+#ifndef Q_OS_WIN32
+        Q_STATIC_ASSERT(sizeof(MarkerPage::Meta) == 28);
+#endif
 
         Meta meta;
 
